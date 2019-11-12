@@ -1,9 +1,9 @@
-title: John Smith
+title: Narang
 description: My Personal Blog
-author: John Smith
-logo: /hcz-jekyll-blog/static/img/avatar.png
+author: Narang
+logo: /static/img/avatar.png
 github: https://github.com/codeasashu
-about: Freelance developer
+about: Web developer
 
 baseurl: ""
 url: ""
