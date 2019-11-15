@@ -47,11 +47,9 @@ Spring security가 지원해주는 password encoder만 사용해서 password저�
 
 2.2 로그인/로그아웃 커스터마이징
 
-Principal을 Authentication에 담아서 관리 
 Principal < Authentication < SecurityContext < SecurityContextHolder(ThreadLocal사용)
 ThreadLocal : 파라미터를 전달하지 않아도 한 thread내에서 공유가능 
-
-쓰레드가 달라지면 authentication 달라짐 
+Principal을 Authentication에 담아서 관리, thread가 달라지면 authentication이 달라짐
 
 Authenication : Principal(UserDetailService에서 return한 객체), GrantAuthority
 UserDetailService는 user정보를 제공하는 역할, 인증은 AuthenticationManager에서 인증 
@@ -60,6 +58,71 @@ AuthenticationManager -> 인증을 담당
 SecurityContextHolder -> 인증정보 담고 있음 
 
 http header나 인증정보를 가져와서 context에 넣는 filter 필요 !!
+
+요청을 servlet container가 받음 
+servlet container에는 fileter가 존재 
+
+DelegatingFilterProxy
+서블릿필터 
+서블릿 필터처리를 스프링에 들어있는 빈으로 위임하고싶을때 사용하는 서블릿 필터
+
+AuthenticationManager가 인증을 하고 SpringSecutiryContextHoler가 인증 넣어주고 
+넣어줄때 SecurityContextPersistenceFilter, UsernamePasswordAuthenticationFilter 사용 
+이 부분을 FilterChainProxy가 호출 FilterChainProxy를 DelegatingFilterProxy가 호출
+SpringSecutiryContextHoler가 인증을 가지고있고
+
+권한 
+User > 
+Role에 추가
+Hierachy 설정 가능 
+
+accessDecisionManager를 따로 지정하지 않는다면
+AffirmativeBases()기본으로 사용 
+
+FilterSecurityInterceptor : 마지막 필터 
+
+ExceptionTranslationFilter에서 처리하는 exception 
+AuthenticationException
+- AccessDeniedException
+anonymous : entrypoint로 이동
+not anonymous : AccessDeniedHandler에 위임
+
+servlet container에 요청이 들어오면
+servlet filter중에 deligatingfilterproxy가 filterchainproxy로 위임
+filter들은 websecurity, httpsecurity를 통해 설정됨(설정에 따라 사용filter달라짐)
+
+
+
+● 동적 리소스는 http.authorizeRequests()에서 처리 권장
+● 정적 리소스는 WebSecurity.ignore()를 권장
+  예외적인 정적 자원(인증이 필요한 정적자원이 있는 경우)는 http.authorizeRequests()를 사용
+
+동일 thread내에서만 security동일 
+
+1. WebAsyncManagerIntegrationFilter : 스프링 MVC의 Async 기능(핸들러에서 'Callable'을 리턴할 수 있는 기능)을 사용할 때에도 SecurityContext를 공유하도록 도와주는 필터
+
+Async : Thread를 다르게 사용
+Thread를 다르게 사용하면 security도 달라지나 
+SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL); 사용하면 Async 다른 thread에서도 security 상속됨
+
+2. SecurityContextPersistenceFilter
+SecurityContextRepository를 사용해서 Http session에서 기존의 SecurityContext를 읽어오거나 초기화 시킴
+● Spring-Session과 연동하여 세션 클러스터를 구현가능
+
+3 . HeaderWriterFilter
+1) XContentTypeOptionsHeaderWriter : 마임타입 스니핑방지, Content-Type으로만 rendering해줌
+2) XXssProtectionHeaderWriter: 브라우저에 내장된 XSS 필터 적용.
+3) CacheControlHeadersWriter: 캐시 히스토리 취약점 방어.
+4) HstsHeaderWriter: HTTPS로만 소통하도록 강제.
+5) XFrameOptionsHeaderWriter: clickjacking 방어.
+
+4. CsrfFilter (Cross-site request forgery)
+: 도메인이 다를경우 호출 허용하지 않음
+: csrf토큰을 사용하여 방지 
+: form tag사용할경우 csrf 자동으로 넣 
+
+cross-origin resource sharing : 도메인이 다르더라도 호출 허용
+
 
 
 * HTTP Basic인증 (formlogin말고 header에 전송)
